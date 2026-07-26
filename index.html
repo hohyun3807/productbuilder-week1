@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테트리스 게임</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-wrapper">
+            <div class="sidebar">
+                <h1>테트리스</h1>
+                <div class="stats">
+                    <div class="stat-item">
+                        <label>점수:</label>
+                        <div id="score">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <label>라인:</label>
+                        <div id="lines">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <label>레벨:</label>
+                        <div id="level">1</div>
+                    </div>
+                </div>
+                
+                <div class="next-box">
+                    <h3>다음 블록</h3>
+                    <canvas id="nextPreview" width="120" height="120"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" class="btn btn-primary">게임 시작</button>
+                    <button id="pauseBtn" class="btn btn-secondary" disabled>일시정지</button>
+                </div>
+                
+                <div class="instructions">
+                    <h3>조작법</h3>
+                    <ul>
+                        <li>← → : 좌우 이동</li>
+                        <li>↓ : 빠른 하강</li>
+                        <li>Z : 시계 반대 회전</li>
+                        <li>X : 시계 방향 회전</li>
+                        <li>Space : 바닥에 떨어짐</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="game-area">
+                <canvas id="gameBoard" width="240" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="tetris.js"></script>
+</body>
+</html>
