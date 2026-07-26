@@ -16,6 +16,7 @@ let gameRunning = false;
 let gamePaused = false;
 let dropCounter = 0;
 let dropInterval = 800;
+let lastTime = 0;
 
 // 테트로미노 형태 정의
 const TETROMINOS = {
@@ -34,7 +35,7 @@ class Tetromino {
     constructor(type = null) {
         type = type || TETROMINO_KEYS[Math.floor(Math.random() * TETROMINO_KEYS.length)];
         this.type = type;
-        this.shape = TETROMINOS[type].shape;
+        this.shape = JSON.parse(JSON.stringify(TETROMINOS[type].shape));
         this.color = TETROMINOS[type].color;
         this.x = Math.floor(GRID_WIDTH / 2) - Math.floor(this.shape[0].length / 2);
         this.y = 0;
@@ -88,7 +89,7 @@ function placeTetromino(piece) {
             if (piece.shape[y][x]) {
                 const boardY = piece.y + y;
                 const boardX = piece.x + x;
-                if (boardY >= 0) {
+                if (boardY >= 0 && boardY < GRID_HEIGHT && boardX >= 0 && boardX < GRID_WIDTH) {
                     board[boardY][boardX] = piece.color;
                 }
             }
@@ -110,7 +111,7 @@ function clearLines() {
     if (linesCleared > 0) {
         lines += linesCleared;
         const points = [0, 40, 100, 300, 1200];
-        score += points[linesCleared] * level;
+        score += (points[Math.min(linesCleared, 4)] || 1200) * level;
         level = Math.floor(lines / 10) + 1;
         dropInterval = Math.max(100, 800 - (level - 1) * 50);
     }
@@ -149,10 +150,12 @@ function draw() {
     }
 
     // 현재 테트로미노 그리기
-    for (let y = 0; y < currentTetromino.shape.length; y++) {
-        for (let x = 0; x < currentTetromino.shape[y].length; x++) {
-            if (currentTetromino.shape[y][x]) {
-                drawBlock(currentTetromino.x + x, currentTetromino.y + y, currentTetromino.color);
+    if (currentTetromino && currentTetromino.shape) {
+        for (let y = 0; y < currentTetromino.shape.length; y++) {
+            for (let x = 0; x < currentTetromino.shape[y].length; x++) {
+                if (currentTetromino.shape[y][x]) {
+                    drawBlock(currentTetromino.x + x, currentTetromino.y + y, currentTetromino.color);
+                }
             }
         }
     }
@@ -171,18 +174,20 @@ function drawNextPreview() {
     nextPreviewCtx.fillStyle = '#000';
     nextPreviewCtx.fillRect(0, 0, nextPreviewCanvas.width, nextPreviewCanvas.height);
 
-    const shape = nextTetromino.shape;
-    const startX = (4 - shape[0].length) * 15;
-    const startY = (4 - shape.length) * 15;
+    if (nextTetromino && nextTetromino.shape) {
+        const shape = nextTetromino.shape;
+        const startX = (4 - shape[0].length) * 15;
+        const startY = (4 - shape.length) * 15;
 
-    for (let y = 0; y < shape.length; y++) {
-        for (let x = 0; x < shape[y].length; x++) {
-            if (shape[y][x]) {
-                nextPreviewCtx.fillStyle = nextTetromino.color;
-                nextPreviewCtx.fillRect(startX + x * 15 + 1, startY + y * 15 + 1, 13, 13);
-                nextPreviewCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                nextPreviewCtx.lineWidth = 1;
-                nextPreviewCtx.strokeRect(startX + x * 15 + 1, startY + y * 15 + 1, 13, 13);
+        for (let y = 0; y < shape.length; y++) {
+            for (let x = 0; x < shape[y].length; x++) {
+                if (shape[y][x]) {
+                    nextPreviewCtx.fillStyle = nextTetromino.color;
+                    nextPreviewCtx.fillRect(startX + x * 15 + 1, startY + y * 15 + 1, 13, 13);
+                    nextPreviewCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    nextPreviewCtx.lineWidth = 1;
+                    nextPreviewCtx.strokeRect(startX + x * 15 + 1, startY + y * 15 + 1, 13, 13);
+                }
             }
         }
     }
@@ -208,18 +213,19 @@ function startGame() {
     lines = 0;
     level = 1;
     dropInterval = 800;
+    dropCounter = 0;
+    lastTime = 0;
     updateStats();
 
     currentTetromino = new Tetromino();
     nextTetromino = new Tetromino();
     gameRunning = true;
     gamePaused = false;
-    dropCounter = 0;
 
     document.getElementById('startBtn').disabled = true;
     document.getElementById('pauseBtn').disabled = false;
 
-    gameLoop(0);
+    requestAnimationFrame(gameLoop);
 }
 
 function togglePause() {
@@ -227,22 +233,25 @@ function togglePause() {
         gamePaused = !gamePaused;
         document.getElementById('pauseBtn').textContent = gamePaused ? '계속하기' : '일시정지';
         if (!gamePaused) {
-            gameLoop(0);
+            lastTime = 0;
+            requestAnimationFrame(gameLoop);
         }
     }
 }
 
-let lastTime = 0;
 function gameLoop(currentTime) {
-    const deltaTime = currentTime - lastTime;
-    lastTime = currentTime;
-
-    if (!gameRunning || gamePaused) {
-        if (!gamePaused) {
-            requestAnimationFrame(gameLoop);
-        }
+    if (!gameRunning) {
         return;
     }
+
+    if (gamePaused) {
+        draw();
+        drawNextPreview();
+        return;
+    }
+
+    const deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
 
     dropCounter += deltaTime;
 
